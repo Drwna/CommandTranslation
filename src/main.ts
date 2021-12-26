@@ -1,12 +1,11 @@
 import * as https from 'https';
 import * as querystring from 'querystring';
 import md5 = require('md5');
+import {appId, appSecret} from './private';
 
 export const translate = (word) => {
   console.log('word:', word);
 
-  const appId = 'xxx';
-  const appSecret = '???';
   const salt = Math.random();
   const sign = md5(appId + word + salt + appSecret);
 
@@ -16,7 +15,7 @@ export const translate = (word) => {
     q: word,
     from: 'en',
     to: 'zh',
-    appid: appId,
+    appid: appId + 1,
     salt: salt,
     sign: sign
   });
@@ -25,22 +24,46 @@ export const translate = (word) => {
 
   const options = {
     // hostname: 'www.baidu.com',
-    hostname: 'api.fanyi.baidu.com/',
+    hostname: 'api.fanyi.baidu.com',
     port: 443,
     path: path,
     method: 'GET'
   };
 
-  const req = https.request(options, (res) => {
+  const request = https.request(options, (response) => {
+    const chunks = [];
+    response.on('data', (chunk) => {
+      chunks.push(chunk);
+    });
+    response.on('end', () => {
+      const string = Buffer.concat(chunks).toString();
+      console.log(string);
+      type BaiduResult = {
+        error_code?: string,
+        error_msg?: string,
+        form: string,
+        to: string,
+        trans_result: {
+          src: string,
+          dst: string,
+        }[]
+      }
+      const object: BaiduResult = JSON.parse(string);
+      if (object.error_code) {
+        console.log(object.error_msg);
 
-    res.on('data', (d) => {
-      process.stdout.write(d);
+        process.exit(2);
+      } else {
+        console.log('翻译后: ', object.trans_result[0].dst);
+        process.exit(0);// 没有错误
+      }
+      // console.log(object);
     });
   });
 
-  req.on('error', (e) => {
+  request.on('error', (e) => {
     console.error(e);
   });
-  req.end();
+  request.end();
 };
 

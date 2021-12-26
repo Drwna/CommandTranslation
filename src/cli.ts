@@ -7,7 +7,6 @@ program.version('0.0.1')
   .usage('<English>')
   .argument('<English>')
   .action((english) => {
-    console.log('username:', english);
     translate(english);
   });
 
