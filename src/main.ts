@@ -4,10 +4,11 @@ import md5 = require('md5');
 import {appId, appSecret} from './private';
 
 const errorMaps = {
-  52003: '用户认证失败',
-  52004: 'error1',
-  52005: 'error2',
-  52006: 'error3',
+  52001: '请求超时',
+  52002: '系统错误',
+  52003: '未授权用户',
+  54000: '必填参数为空',
+  54003: '访问频率受限',
   unknown: '服务器繁忙'
 //   if (object.error_code === '52003') {
 //   console.log('用户认证失败');
@@ -20,9 +21,20 @@ const errorMaps = {
 // }
 };
 
+let from, to;
 
 export const translate = (word) => {
-  console.log('word:', word);
+  // console.log('word:', word);
+
+  if (/[a-zA-Z]/.test(word[0])) {
+    // 英译中
+    from = 'en';
+    to = 'zh';
+  } else {
+    // 中译英
+    from = 'zh';
+    to = 'en';
+  }
 
   const salt = Math.random();
   const sign = md5(appId + word + salt + appSecret);
@@ -31,9 +43,9 @@ export const translate = (word) => {
   const query: string = querystring.stringify({
     // ?q=blue&from=en&to=zh&appid=20211226001038859&salt=1435660288&sign=ab2bb69563f5815505ebeda5ec4e11d5
     q: word,
-    from: 'en',
-    to: 'zh',
-    appid: appId + 1,
+    from,
+    to,
+    appid: appId,
     salt: salt,
     sign: sign
   });
@@ -55,7 +67,7 @@ export const translate = (word) => {
     });
     response.on('end', () => {
       const string = Buffer.concat(chunks).toString();
-      console.log(string);
+      // console.log(string);
       type BaiduResult = {
         error_code?: string,
         error_msg?: string,
@@ -74,7 +86,9 @@ export const translate = (word) => {
           process.exit(2);
         }
       } else {
-        console.log('翻译后: ', object.trans_result[0].dst);
+        object.trans_result.map(obj => {
+          console.log('翻译后: ', obj.dst);
+        });
         process.exit(0);// 没有错误
       }
       // console.log(object);
