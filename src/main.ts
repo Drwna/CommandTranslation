@@ -3,13 +3,15 @@ import * as querystring from 'querystring';
 import md5 = require('md5');
 import {appId, appSecret} from './private';
 
-const errorMaps = {
+type ErrorMap = {
+  [key: string]: string
+}
+const errorMaps: ErrorMap = {
   52001: '请求超时',
   52002: '系统错误',
   52003: '未授权用户',
   54000: '必填参数为空',
   54003: '访问频率受限',
-  unknown: '服务器繁忙'
 //   if (object.error_code === '52003') {
 //   console.log('用户认证失败');
 // } else if (object.error_code === '52004') {
@@ -23,7 +25,7 @@ const errorMaps = {
 
 let from, to;
 
-export const translate = (word) => {
+export const translate = (word: string) => {
   // console.log('word:', word);
 
   if (/[a-zA-Z]/.test(word[0])) {
@@ -61,8 +63,9 @@ export const translate = (word) => {
   };
 
   const request = https.request(options, (response) => {
-    const chunks = [];
+    const chunks: Buffer[] = [];
     response.on('data', (chunk) => {
+      // console.log(chunk.constructor);
       chunks.push(chunk);
     });
     response.on('end', () => {
@@ -82,7 +85,7 @@ export const translate = (word) => {
       if (object.error_code) {
         console.log(object.error_code);
         if (object.error_code in errorMaps) {
-          console.log(errorMaps[object.error_code] || errorMaps[object.error_msg]);
+          console.log(errorMaps[object.error_code] || object.error_msg);
           process.exit(2);
         }
       } else {
